@@ -8,8 +8,9 @@ import (
 	"sort"
 	"strings"
 
+	utils "demoparser/utils"
+
 	dem "github.com/markus-wa/demoinfocs-golang/v4/pkg/demoinfocs"
-	"github.com/markus-wa/demoinfocs-golang/v4/pkg/demoinfocs/common"
 	events "github.com/markus-wa/demoinfocs-golang/v4/pkg/demoinfocs/events"
 )
 
@@ -45,67 +46,6 @@ var shotgunHSShots = make(map[uint64]bool)
 var weaponFiredAtTick = make(map[uint64]map[uint64]bool) // shooterID -> tick -> fired
 
 var pendingPlayerHurt = make(map[uint64][]events.PlayerHurt) // attackerID -> list of PlayerHurt events
-
-func isRifle(weapon *common.Equipment) bool {
-	if weapon == nil {
-		return false
-	}
-	rifles := map[string]bool{
-		"AK-47":    true,
-		"M4A4":     true,
-		"M4A1":     true,
-		"Galil AR": true,
-		"FAMAS":    true,
-	}
-	return rifles[weapon.String()]
-}
-
-func isShotgun(weapon *common.Equipment) bool {
-	if weapon == nil {
-		return false
-	}
-	shotguns := map[string]bool{
-		"XM1014":    true,
-		"MAG-7":     true,
-		"Nova":      true,
-		"Sawed-Off": true,
-	}
-	return shotguns[weapon.String()]
-}
-
-func isAWP(weapon *common.Equipment) bool {
-	return weapon != nil && weapon.String() == "AWP"
-}
-
-func isGrenade(weapon *common.Equipment) bool {
-	if weapon == nil {
-		return false
-	}
-	grenades := map[string]bool{
-		"HE Grenade":         true,
-		"Flashbang":          true,
-		"Smoke Grenade":      true,
-		"Decoy Grenade":      true,
-		"Molotov":            true,
-		"Incendiary Grenade": true,
-	}
-	return grenades[weapon.String()]
-}
-
-func isKnife(weapon *common.Equipment) bool {
-	if weapon == nil {
-		return false
-	}
-	knives := map[string]bool{
-		"Knife":           true,
-		"Bayonet":         true,
-		"M9 Bayonet":      true,
-		"Karambit":        true,
-		"Butterfly Knife": true,
-		"Flip Knife":      true,
-	}
-	return knives[weapon.String()]
-}
 
 func processDemo(demoPath string) {
 	f, err := os.Open(demoPath)
@@ -155,7 +95,7 @@ func processDemo(demoPath string) {
 			}
 
 			// Ignore grenades, knives, and AWP shots
-			if isGrenade(e.Weapon) || isKnife(e.Weapon) {
+			if utils.IsGrenade(e.Weapon) || utils.IsKnife(e.Weapon) {
 				return
 			}
 
@@ -163,7 +103,7 @@ func processDemo(demoPath string) {
 				fmt.Printf("PlayerHurt event: Attacker %s, Victim %s, Tick %d with %s\n", e.Attacker.Name, e.Player.Name, currentTick, e.Weapon.String())
 			}
 
-			if isShotgun(e.Weapon) {
+			if utils.IsShotgun(e.Weapon) {
 				// Only count this shotgun shot once per tick
 				if !shotgunShots[currentTick] {
 					shotgunShots[currentTick] = true
@@ -176,13 +116,13 @@ func processDemo(demoPath string) {
 					playerStats[attackerID].TotalHSHits++
 				}
 			} else {
-				if !isAWP(e.Weapon) {
+				if !utils.IsAWP(e.Weapon) {
 					// If it's NOT a shotgun, count normally
 					playerStats[attackerID].TotalHits++
 					if e.HitGroup == 1 {
 						playerStats[attackerID].TotalHSHits++
 					}
-					if isRifle(e.Weapon) {
+					if utils.IsRifle(e.Weapon) {
 						playerStats[attackerID].RifleHits++
 						if e.HitGroup == 1 {
 							playerStats[attackerID].RifleHSHits++
@@ -224,7 +164,7 @@ func processDemo(demoPath string) {
 				playerStats[shooterID] = &PlayerStats{SteamID: shooterID, Name: e.Shooter.Name}
 			}
 			// Ignore grenades, knives, and AWP shots
-			if isGrenade(e.Weapon) || isKnife(e.Weapon) || isAWP(e.Weapon) {
+			if utils.IsGrenade(e.Weapon) || utils.IsKnife(e.Weapon) || utils.IsAWP(e.Weapon) {
 				return
 			}
 
@@ -269,14 +209,52 @@ func processDemo(demoPath string) {
 }
 
 func main() {
-	files, err := filepath.Glob("*.dem")
-	if err != nil {
-		log.Panic("Failed to read demo files: ", err)
-	}
+	var files []string
+	var err error
 
-	if len(files) == 0 {
-		fmt.Println("No .dem files found in the current folder.")
-		return
+	// Check if a file parameter is passed
+	if len(os.Args) > 1 {
+		inputFile := os.Args[1]
+		if strings.HasSuffix(inputFile, ".gz") {
+			// Handle .gz file
+			outputDir := strings.SplitN(filepath.Base(inputFile), ".", 2)[0]
+			err := os.MkdirAll(outputDir, os.ModePerm)
+			if err != nil {
+				log.Panicf("Failed to create output directory: %v\n", err)
+			}
+
+			err = utils.ExtractGzFile(inputFile, outputDir)
+			if err != nil {
+				log.Panicf("Failed to extract .gz file: %v\n", err)
+			}
+
+			// Check if the extracted folder contains a .dem file
+			extractedFiles, err := filepath.Glob(filepath.Join(outputDir, "*.dem"))
+			if err != nil {
+				log.Panicf("Failed to read extracted files: %v\n", err)
+			}
+
+			if len(extractedFiles) > 0 {
+				files = append(files, extractedFiles...)
+			} else {
+				fmt.Println("No .dem files found in the extracted folder.")
+				return
+			}
+		} else {
+			// Add the provided file directly
+			files = []string{inputFile}
+		}
+	} else {
+		// Default to processing all .dem files in the current directory
+		files, err = filepath.Glob("*.dem")
+		if err != nil {
+			log.Panic("Failed to read demo files: ", err)
+		}
+
+		if len(files) == 0 {
+			fmt.Println("No .dem files found in the current folder.")
+			return
+		}
 	}
 
 	for _, demoFile := range files {

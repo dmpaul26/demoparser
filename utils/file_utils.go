@@ -10,7 +10,7 @@ import (
 )
 
 // extractGzFile extracts a .gz file to the specified output directory.
-func extractGzFile(gzFilePath string, outputDir string) error {
+func ExtractGzFile(gzFilePath string, outputDir string) error {
 	// Open the .gz file
 	gzFile, err := os.Open(gzFilePath)
 	if err != nil {

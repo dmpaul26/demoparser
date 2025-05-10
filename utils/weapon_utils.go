@@ -4,7 +4,7 @@ import (
 	"github.com/markus-wa/demoinfocs-golang/v4/pkg/demoinfocs/common"
 )
 
-func isRifle(weapon *common.Equipment) bool {
+func IsRifle(weapon *common.Equipment) bool {
 	if weapon == nil {
 		return false
 	}
@@ -18,7 +18,7 @@ func isRifle(weapon *common.Equipment) bool {
 	return rifles[weapon.String()]
 }
 
-func isShotgun(weapon *common.Equipment) bool {
+func IsShotgun(weapon *common.Equipment) bool {
 	if weapon == nil {
 		return false
 	}
@@ -31,11 +31,11 @@ func isShotgun(weapon *common.Equipment) bool {
 	return shotguns[weapon.String()]
 }
 
-func isAWP(weapon *common.Equipment) bool {
+func IsAWP(weapon *common.Equipment) bool {
 	return weapon != nil && weapon.String() == "AWP"
 }
 
-func isGrenade(weapon *common.Equipment) bool {
+func IsGrenade(weapon *common.Equipment) bool {
 	if weapon == nil {
 		return false
 	}
@@ -50,7 +50,7 @@ func isGrenade(weapon *common.Equipment) bool {
 	return grenades[weapon.String()]
 }
 
-func isKnife(weapon *common.Equipment) bool {
+func IsKnife(weapon *common.Equipment) bool {
 	if weapon == nil {
 		return false
 	}
