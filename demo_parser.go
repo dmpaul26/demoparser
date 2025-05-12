@@ -211,38 +211,64 @@ func processDemo(demoPath string) {
 func main() {
 	var files []string
 	var err error
+	foldersToDelete := []string{}
 
 	// Check if a file parameter is passed
 	if len(os.Args) > 1 {
-		inputFile := os.Args[1]
-		if strings.HasSuffix(inputFile, ".gz") {
-			// Handle .gz file
-			outputDir := strings.SplitN(filepath.Base(inputFile), ".", 2)[0]
-			err := os.MkdirAll(outputDir, os.ModePerm)
-			if err != nil {
-				log.Panicf("Failed to create output directory: %v\n", err)
-			}
+		for _, inputFile := range os.Args[1:] {
+			if strings.HasSuffix(inputFile, ".gz") {
+				// Handle .gz file
+				outputDir := strings.SplitN(filepath.Base(inputFile), ".", 2)[0]
+				err := os.MkdirAll(outputDir, os.ModePerm)
+				if err != nil {
+					log.Panicf("Failed to create output directory: %v\n", err)
+				}
 
-			err = utils.ExtractGzFile(inputFile, outputDir)
-			if err != nil {
-				log.Panicf("Failed to extract .gz file: %v\n", err)
-			}
+				err = utils.ExtractGzFile(inputFile, outputDir)
+				if err != nil {
+					log.Panicf("Failed to extract .gz file: %v\n", err)
+				}
 
-			// Check if the extracted folder contains a .dem file
-			extractedFiles, err := filepath.Glob(filepath.Join(outputDir, "*.dem"))
-			if err != nil {
-				log.Panicf("Failed to read extracted files: %v\n", err)
-			}
+				// Check if the extracted folder contains a .dem file
+				extractedFiles, err := filepath.Glob(filepath.Join(outputDir, "*.dem"))
+				foldersToDelete = append(foldersToDelete, outputDir)
+				if err != nil {
+					log.Panicf("Failed to read extracted files: %v\n", err)
+				}
 
-			if len(extractedFiles) > 0 {
-				files = append(files, extractedFiles...)
+				if len(extractedFiles) > 0 {
+					files = append(files, extractedFiles...)
+				} else {
+					fmt.Println("No .dem files found in the extracted folder.")
+					return
+				}
+			} else if strings.HasSuffix(inputFile, ".zst") {
+				// Handle .zst file
+				outputDir := strings.SplitN(filepath.Base(inputFile), ".", 2)[0]
+				err := os.MkdirAll(outputDir, os.ModePerm)
+				if err != nil {
+					log.Panicf("Failed to create output directory: %v\n", err)
+				}
+				err = utils.ExtractZstFile(inputFile, outputDir)
+				if err != nil {
+					log.Panicf("Failed to extract .zst file: %v\n", err)
+				}
+				// Check if the extracted folder contains a .dem file
+				extractedFiles, err := filepath.Glob(filepath.Join(outputDir, "*.dem"))
+				foldersToDelete = append(foldersToDelete, outputDir)
+				if err != nil {
+					log.Panicf("Failed to read extracted files: %v\n", err)
+				}
+				if len(extractedFiles) > 0 {
+					files = append(files, extractedFiles...)
+				} else {
+					fmt.Println("No .dem files found in the extracted folder.")
+					return
+				}
 			} else {
-				fmt.Println("No .dem files found in the extracted folder.")
-				return
+				// Add the provided file directly
+				files = []string{inputFile}
 			}
-		} else {
-			// Add the provided file directly
-			files = []string{inputFile}
 		}
 	} else {
 		// Default to processing all .dem files in the current directory
@@ -314,4 +340,14 @@ func main() {
 		fmt.Printf("%-20s %-8d %-8d %-10.2f %-15.2f %-15.2f %-10.2f\n",
 			stats.Name, stats.Kills, stats.Deaths, stats.HSPercentage, stats.RifleHSAcc, stats.TotalHSAcc, stats.TotalAcc)
 	}
+	// Clean up extracted folders
+	for _, folder := range foldersToDelete {
+		err := os.RemoveAll(folder)
+		if err != nil {
+			log.Printf("Failed to delete folder %s: %v\n", folder, err)
+		} else {
+			fmt.Printf("Deleted folder: %s\n", folder)
+		}
+	}
+	fmt.Println("Demo processing completed.")
 }
