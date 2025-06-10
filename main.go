@@ -23,6 +23,8 @@ func main() {
 	//eventHandlers.DebugRounds = true
 	//eventHandlers.DebugRoundEnds = true
 	//eventHandlers.DebugConnections = true
+	//eventHandlers.DebugWeaponFire = true
+	//eventHandlers.WeaponFirePlayerFilter = "" // Set to "" to log all, or a name to filter
 
 	utils.LoadDemos(&foldersToDelete, &files)
 
@@ -31,6 +33,8 @@ func main() {
 		resetGlobals()
 	}
 
+	// *** toggle printers ***
+	// Uncomment the following lines to enable specific printers
 	printers.PrintStats()
 
 	// Clean up extracted folders

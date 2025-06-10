@@ -10,11 +10,19 @@ import (
 	events "github.com/markus-wa/demoinfocs-golang/v4/pkg/demoinfocs/events"
 )
 
-// handleWeaponFireEvent processes WeaponFire events.
+var DebugWeaponFire = false
+var WeaponFirePlayerFilter = "" // If set, only log shots by this player
+
+// HandleWeaponFireEvent processes WeaponFire events.
 func HandleWeaponFireEvent(parser dem.Parser, event events.WeaponFire) {
 	if event.Shooter != nil && event.Shooter.IsConnected {
 		shooterID := event.Shooter.SteamID64
 		currentTick := uint64(parser.GameState().IngameTick())
+
+		// Log the shooter every time a weapon is fired if enabled and matches filter
+		if DebugWeaponFire && (WeaponFirePlayerFilter == "" || event.Shooter.Name == WeaponFirePlayerFilter) {
+			fmt.Printf("%s fired by: %s (SteamID: %d) at tick %d\n", event.Weapon.String(), event.Shooter.Name, shooterID, currentTick)
+		}
 
 		// Initialize player stats if not already present
 		if _, exists := models.PlayerStatsMap[shooterID]; !exists {
@@ -52,7 +60,7 @@ func HandleWeaponFireEvent(parser dem.Parser, event events.WeaponFire) {
 			delete(models.PendingPlayerHurt, shooterID) // Clear processed events
 		}
 
-		// Log the weapon fire
+		// Log the weapon fire for "itsPhix"
 		if event.Shooter.Name == "itsPhix" {
 			fmt.Printf("%s fired by %s at tick %d\n", event.Weapon.String(), event.Shooter.Name, currentTick)
 		}
