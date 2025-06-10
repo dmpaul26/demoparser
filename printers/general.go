@@ -65,8 +65,10 @@ func PrintStats() {
 	fmt.Printf("%-20s %-8s %-8s %-10s %-15s %-15s %-10s %-15s\n", "Player", "Kills", "Deaths", "HS%", "Rifle HS Acc", "Total HS Acc", "Accuracy", "Avg Aim Dist")
 	fmt.Println(strings.Repeat("-", 120))
 	for _, stats := range sortedPlayers {
-		fmt.Printf("%-20s %-8d %-8d %-10.2f %-15.2f %-15.2f %-10.2f %-15.2f\n",
-			stats.Name, stats.Kills, stats.Deaths, stats.HSPercentage, stats.RifleHSAcc, stats.TotalHSAcc, stats.TotalAcc, stats.AverageAimDist)
+		if stats.TotalShots > 0 {
+			fmt.Printf("%-20s %-8d %-8d %-10.2f %-15.2f %-15.2f %-10.2f %-15.2f\n",
+				stats.Name, stats.Kills, stats.Deaths, stats.HSPercentage, stats.RifleHSAcc, stats.TotalHSAcc, stats.TotalAcc, stats.AverageAimDist)
+		}
 	}
 }
 

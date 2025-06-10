@@ -1,17 +1,33 @@
 package eventHandlers
 
 import (
-	"math"
-
-	"demoparser/models"
+	"fmt"
 
 	dem "github.com/markus-wa/demoinfocs-golang/v4/pkg/demoinfocs"
 	events "github.com/markus-wa/demoinfocs-golang/v4/pkg/demoinfocs/events"
 )
 
+var DebugSpotters = false
+
 // HandlePlayerSpottersChangedEvent processes PlayerSpottersChanged events.
-func HandlePlayerSpottersChangedEvent(p dem.Parser, e events.PlayerSpottersChanged) {
-	if e.Spotted == nil || !e.Spotted.IsConnected || !e.Spotted.IsAlive() {
+func HandlePlayerSpottersChangedEvent(parser dem.Parser, event events.PlayerSpottersChanged) {
+	if DebugSpotters {
+		spotters := parser.GameState().Participants().SpottersOf(event.Spotted)
+		if len(spotters) == 0 {
+			fmt.Printf("Spotters disappeared: %s at tick %d\n", event.Spotted, parser.GameState().IngameTick())
+		} else {
+			fmt.Printf("Spotters changed: %s at tick %d\n", event.Spotted, parser.GameState().IngameTick())
+			fmt.Printf("%s's spotters:\n", event.Spotted)
+			for _, spotter := range spotters {
+				if spotter != nil {
+					fmt.Println(spotter.Name)
+				}
+			}
+		}
+	}
+
+	// this is all broke idk yet
+	/* if e.Spotted == nil || !e.Spotted.IsConnected || !e.Spotted.IsAlive() {
 		return
 	}
 
@@ -26,7 +42,7 @@ func HandlePlayerSpottersChangedEvent(p dem.Parser, e events.PlayerSpottersChang
 	// Get the current spotters from the game state
 	currentSpotters := make(map[uint64]bool)
 	for _, player := range p.GameState().Participants().Playing() {
-		if player == nil || !player.IsConnected || !e.Spotted.IsConnected || !player.IsAlive() || player.PlayerPawnEntity() == nil || e.Spotted == nil {
+		if !e.Spotted.IsConnected || !player.IsAlive() || player.PlayerPawnEntity() == nil || e.Spotted == nil {
 			continue
 		}
 
@@ -65,5 +81,5 @@ func HandlePlayerSpottersChangedEvent(p dem.Parser, e events.PlayerSpottersChang
 	}
 
 	// Update the spotters map for this player
-	models.PlayerSpotters[spottedPlayerID] = currentSpotters
+	models.PlayerSpotters[spottedPlayerID] = currentSpotters */
 }

@@ -13,11 +13,7 @@ import (
 	"github.com/markus-wa/demoinfocs-golang/v4/pkg/demoinfocs/events"
 )
 
-func main() {
-	var files []string
-	foldersToDelete := []string{}
-
-	// *** toggle-able debug flags ***
+func debugToggles() {
 	// Uncomment the following lines to enable debug output for specific events
 	//eventHandlers.DebugChat = true
 	//eventHandlers.DebugRounds = true
@@ -25,21 +21,37 @@ func main() {
 	//eventHandlers.DebugConnections = true
 	//eventHandlers.DebugWeaponFire = true
 	//eventHandlers.WeaponFirePlayerFilter = "" // Set to "" to log all, or a name to filter
+	//eventHandlers.DebugSpotters = true
 	//models.DebugPlayerStatsInit = true // or false to disable
+	//eventHandlers.MaxRoundDebug = 1
+}
 
+func printerToggles() {
+	// Uncomment the following lines to enable specific printers
+	printers.PrintStats()
+	//printers.PrintWeaponFireCounts()
+}
+
+func main() {
+	var files []string
+	foldersToDelete := []string{}
+
+	debugToggles()
 	utils.LoadDemos(&foldersToDelete, &files)
 
+	//files = files[:1] // *** Limit to 1 demo for testing
 	for _, demoFile := range files {
 		parseDemo(demoFile)
 		resetGlobals()
 	}
 
-	// *** toggle printers ***
-	// Uncomment the following lines to enable specific printers
-	printers.PrintStats()
-	//printers.PrintWeaponFireCounts()
+	printerToggles()
 
-	// Clean up extracted folders
+	cleanupFolders(foldersToDelete)
+	fmt.Println("Demo processing completed.")
+}
+
+func cleanupFolders(foldersToDelete []string) {
 	for _, folder := range foldersToDelete {
 		err := os.RemoveAll(folder)
 		if err != nil {
@@ -48,7 +60,6 @@ func main() {
 			fmt.Printf("Deleted folder: %s\n", folder)
 		}
 	}
-	fmt.Println("Demo processing completed.")
 }
 
 func parseDemo(demoPath string) {
@@ -58,25 +69,27 @@ func parseDemo(demoPath string) {
 	}
 	defer f.Close()
 
-	p := demoinfocs.NewParser(f)
-	defer p.Close()
+	parser := demoinfocs.NewParser(f)
+	defer parser.Close()
 
 	fmt.Printf("Processing demo: %s\n", demoPath)
 
-	p.RegisterEventHandler(func(e events.Kill) { eventHandlers.HandleKillEvent(p, e) })
-	p.RegisterEventHandler(func(e events.PlayerHurt) { eventHandlers.HandlePlayerHurtEvent(p, e) })
-	p.RegisterEventHandler(func(e events.WeaponFire) { eventHandlers.HandleWeaponFireEvent(p, e) })
-	p.RegisterEventHandler(func(e events.PlayerSpottersChanged) { eventHandlers.HandlePlayerSpottersChangedEvent(p, e) })
-	p.RegisterEventHandler(func(e events.RoundStart) { eventHandlers.HandleRoundStartEvent(e) })
-	p.RegisterEventHandler(func(e events.RoundEnd) { eventHandlers.HandleRoundEndEvent(e) })
-	p.RegisterEventHandler(func(e events.MatchStart) { eventHandlers.HandleMatchStartedEvent(e) })
-	p.RegisterEventHandler(func(e events.AnnouncementFinalRound) { eventHandlers.HandleFinalRoundEvent(e) })
-	p.RegisterEventHandler(func(e events.AnnouncementWinPanelMatch) { eventHandlers.HandleWinPanelMatchEvent(e) })
-	p.RegisterEventHandler(func(e events.PlayerConnect) { eventHandlers.HandlePlayerConnectEvent(e) })
-	p.RegisterEventHandler(func(e events.PlayerDisconnected) { eventHandlers.HandlePlayerDisconnectedEvent(e) })
-	p.RegisterEventHandler(func(e events.ChatMessage) { eventHandlers.HandleChatMessage(e) })
+	parser.RegisterEventHandler(func(event events.Kill) { eventHandlers.HandleKillEvent(parser, event) })
+	parser.RegisterEventHandler(func(event events.PlayerHurt) { eventHandlers.HandlePlayerHurtEvent(parser, event) })
+	parser.RegisterEventHandler(func(event events.WeaponFire) { eventHandlers.HandleWeaponFireEvent(parser, event) })
+	parser.RegisterEventHandler(func(event events.PlayerSpottersChanged) {
+		eventHandlers.HandlePlayerSpottersChangedEvent(parser, event)
+	})
+	parser.RegisterEventHandler(func(event events.RoundStart) { eventHandlers.HandleRoundStartEvent(parser, event) })
+	parser.RegisterEventHandler(func(event events.RoundEnd) { eventHandlers.HandleRoundEndEvent(parser, event) })
+	parser.RegisterEventHandler(func(event events.MatchStart) { eventHandlers.HandleMatchStartedEvent(parser, event) })
+	parser.RegisterEventHandler(func(event events.AnnouncementFinalRound) { eventHandlers.HandleFinalRoundEvent(parser, event) })
+	parser.RegisterEventHandler(func(event events.AnnouncementWinPanelMatch) { eventHandlers.HandleWinPanelMatchEvent(parser, event) })
+	parser.RegisterEventHandler(func(event events.PlayerConnect) { eventHandlers.HandlePlayerConnectEvent(parser, event) })
+	parser.RegisterEventHandler(func(event events.PlayerDisconnected) { eventHandlers.HandlePlayerDisconnectedEvent(parser, event) })
+	parser.RegisterEventHandler(func(event events.ChatMessage) { eventHandlers.HandleChatMessage(parser, event) })
 
-	err = p.ParseToEnd()
+	err = parser.ParseToEnd()
 	if err != nil {
 		log.Panicf("Failed to parse demo %s: %v\n", demoPath, err)
 	}

@@ -8,16 +8,16 @@ import (
 )
 
 // HandleKillEvent processes Kill events.
-func HandleKillEvent(p dem.Parser, e events.Kill) {
-	if e.Killer != nil && e.Killer.IsConnected {
-		killerID := e.Killer.SteamID64
+func HandleKillEvent(parser dem.Parser, event events.Kill) {
+	if event.Killer != nil && event.Killer.IsConnected {
+		killerID := event.Killer.SteamID64
 		models.PlayerStatsMap[killerID].Kills++
-		if e.IsHeadshot {
+		if event.IsHeadshot {
 			models.PlayerStatsMap[killerID].Headshots++
 		}
 	}
-	if e.Victim != nil && e.Victim.IsConnected {
-		victimID := e.Victim.SteamID64
+	if event.Victim != nil && event.Victim.IsConnected {
+		victimID := event.Victim.SteamID64
 		models.PlayerStatsMap[victimID].Deaths++
 	}
 }

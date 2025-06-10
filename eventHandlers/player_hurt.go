@@ -11,42 +11,42 @@ import (
 )
 
 // HandlePlayerHurtEvent processes PlayerHurt events.
-func HandlePlayerHurtEvent(p dem.Parser, e events.PlayerHurt) {
-	if e.Attacker != nil && e.Attacker.IsConnected && e.Player != nil && e.Player.IsConnected {
-		attackerID := e.Attacker.SteamID64
-		currentTick := uint64(p.GameState().IngameTick())
+func HandlePlayerHurtEvent(parser dem.Parser, event events.PlayerHurt) {
+	if event.Attacker != nil && event.Attacker.IsConnected && event.Player != nil && event.Player.IsConnected {
+		attackerID := event.Attacker.SteamID64
+		currentTick := uint64(parser.GameState().IngameTick())
 
-		if e.Attacker.Team == e.Player.Team {
+		if event.Attacker.Team == event.Player.Team {
 			return // Ignore team damage
 		}
 
 		// Ignore grenades, knives
-		if utils.IsGrenade(e.Weapon) || utils.IsKnife(e.Weapon) {
+		if utils.IsGrenade(event.Weapon) || utils.IsKnife(event.Weapon) {
 			return
 		}
 
-		if utils.IsShotgun(e.Weapon) {
+		if utils.IsShotgun(event.Weapon) {
 			// Only count this shotgun shot once per tick
 			if !models.ShotgunShots[currentTick] {
 				models.ShotgunShots[currentTick] = true
 				models.PlayerStatsMap[attackerID].ShotgunHits++
 				models.PlayerStatsMap[attackerID].TotalHits++
 			}
-			if e.HitGroup == 1 && !models.ShotgunHSShots[currentTick] {
+			if event.HitGroup == 1 && !models.ShotgunHSShots[currentTick] {
 				models.ShotgunHSShots[currentTick] = true
 				models.PlayerStatsMap[attackerID].ShotgunHSHits++
 				models.PlayerStatsMap[attackerID].TotalHSHits++
 			}
 		} else {
-			if !utils.IsAWP(e.Weapon) {
+			if !utils.IsAWP(event.Weapon) {
 				// If it's NOT a shotgun, count normally
 				models.PlayerStatsMap[attackerID].TotalHits++
-				if e.HitGroup == 1 {
+				if event.HitGroup == 1 {
 					models.PlayerStatsMap[attackerID].TotalHSHits++
 				}
-				if utils.IsRifle(e.Weapon) {
+				if utils.IsRifle(event.Weapon) {
 					models.PlayerStatsMap[attackerID].RifleHits++
-					if e.HitGroup == 1 {
+					if event.HitGroup == 1 {
 						models.PlayerStatsMap[attackerID].RifleHSHits++
 					}
 				}
@@ -58,8 +58,8 @@ func HandlePlayerHurtEvent(p dem.Parser, e events.PlayerHurt) {
 		for tickOffset := -3; tickOffset <= 3; tickOffset++ {
 			tickToCheck := currentTick + uint64(tickOffset)
 			if models.WeaponFiredAtTick[attackerID][tickToCheck] {
-				if e.Attacker.Name == "itsPhix" {
-					fmt.Printf("Weapon fire found for player %s at tick %d hitting player %s\n", e.Attacker.Name, tickToCheck, e.Player.Name)
+				if event.Attacker.Name == "itsPhix" {
+					fmt.Printf("Weapon fire found for player %s at tick %d hitting player %s\n", event.Attacker.Name, tickToCheck, event.Player.Name)
 				}
 				delete(models.WeaponFiredAtTick[attackerID], tickToCheck)
 				found = true
@@ -69,7 +69,7 @@ func HandlePlayerHurtEvent(p dem.Parser, e events.PlayerHurt) {
 
 		if !found {
 			// Store the event for later processing
-			models.PendingPlayerHurt[attackerID] = append(models.PendingPlayerHurt[attackerID], e)
+			models.PendingPlayerHurt[attackerID] = append(models.PendingPlayerHurt[attackerID], event)
 			//fmt.Printf("No weapon fire found for player %s near tick %d\n", e.Attacker.Name, currentTick)
 		}
 	}
