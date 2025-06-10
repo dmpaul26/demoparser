@@ -24,13 +24,10 @@ func HandleWeaponFireEvent(parser dem.Parser, event events.WeaponFire) {
 			fmt.Printf("%s fired by: %s (SteamID: %d) at tick %d\n", event.Weapon.String(), event.Shooter.Name, shooterID, currentTick)
 		}
 
-		// Initialize player stats if not already present
-		if _, exists := models.PlayerStatsMap[shooterID]; !exists {
-			models.PlayerStatsMap[shooterID] = &models.PlayerStats{SteamID: shooterID, Name: event.Shooter.Name}
-		}
-		// Ignore grenades, knives, and AWP shots
-		if utils.IsGrenade(event.Weapon) || utils.IsKnife(event.Weapon) || utils.IsAWP(event.Weapon) {
-			return
+		models.PlayerStatsMap[shooterID].WeaponFireCounts[event.Weapon.String()]++
+
+		if utils.IsGrenade(event.Weapon) || utils.IsKnife(event.Weapon) {
+			return // Ignore grenades and knives before incrementing shots
 		}
 
 		// Increment total shots fired
@@ -41,6 +38,11 @@ func HandleWeaponFireEvent(parser dem.Parser, event events.WeaponFire) {
 			models.WeaponFiredAtTick[shooterID] = make(map[uint64]bool)
 		}
 		models.WeaponFiredAtTick[shooterID][currentTick] = true
+
+		// Ignore AWP shots
+		if utils.IsAWP(event.Weapon) {
+			return
+		}
 
 		// Process pending PlayerHurt events
 		if events, exists := models.PendingPlayerHurt[shooterID]; exists {
@@ -58,11 +60,6 @@ func HandleWeaponFireEvent(parser dem.Parser, event events.WeaponFire) {
 				}
 			}
 			delete(models.PendingPlayerHurt, shooterID) // Clear processed events
-		}
-
-		// Log the weapon fire for "itsPhix"
-		if event.Shooter.Name == "itsPhix" {
-			fmt.Printf("%s fired by %s at tick %d\n", event.Weapon.String(), event.Shooter.Name, currentTick)
 		}
 	}
 }

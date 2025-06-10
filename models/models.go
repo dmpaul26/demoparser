@@ -1,8 +1,13 @@
 package models
 
 import (
+	"fmt"
+
 	events "github.com/markus-wa/demoinfocs-golang/v4/pkg/demoinfocs/events"
 )
+
+// DebugPlayerStatsInit controls logging for player stats initialization.
+var DebugPlayerStatsInit = false
 
 // PlayerStats struct to store kills, deaths, total HS acc, rifle HS acc, and shotgun HS hits
 type PlayerStats struct {
@@ -28,6 +33,9 @@ type PlayerStats struct {
 	TotalAimDistance float64 // Cumulative angular distance
 	SpottingEvents   int     // Number of spotting events
 	AverageAimDist   float64 // Average angular distance
+
+	// WeaponFireCounts tracks the number of times each weapon has been fired
+	WeaponFireCounts map[string]int
 }
 
 // Player stats map (keyed by SteamID64 instead of name)
@@ -43,3 +51,21 @@ var WeaponFiredAtTick = make(map[uint64]map[uint64]bool) // shooterID -> tick ->
 var PendingPlayerHurt = make(map[uint64][]events.PlayerHurt) // attackerID -> list of PlayerHurt events
 
 var PlayerSpotters = make(map[uint64]map[uint64]bool) // playerID -> set of spotterIDs
+
+func TryInitializePlayerStatsMap(shooterID uint64, name string) {
+	if stats, exists := PlayerStatsMap[shooterID]; !exists {
+		if DebugPlayerStatsInit {
+			fmt.Printf("Initializing PlayerStats for %s (SteamID: %d)\n", name, shooterID)
+		}
+		PlayerStatsMap[shooterID] = &PlayerStats{
+			SteamID:          shooterID,
+			Name:             name,
+			WeaponFireCounts: make(map[string]int),
+		}
+	} else if stats.Name != name {
+		if DebugPlayerStatsInit {
+			fmt.Printf("Updating PlayerStats name for SteamID %d: '%s' -> '%s'\n", shooterID, stats.Name, name)
+		}
+		stats.Name = name
+	}
+}

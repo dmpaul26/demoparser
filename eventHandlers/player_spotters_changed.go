@@ -58,11 +58,6 @@ func HandlePlayerSpottersChangedEvent(p dem.Parser, e events.PlayerSpottersChang
 				angularDistance = 360 - angularDistance
 			}
 
-			// Initialize player stats if not already present
-			if _, exists := models.PlayerStatsMap[spotterID]; !exists {
-				models.PlayerStatsMap[spotterID] = &models.PlayerStats{SteamID: spotterID, Name: spotter.Name}
-			}
-
 			// Update stats
 			models.PlayerStatsMap[spotterID].TotalAimDistance += angularDistance
 			models.PlayerStatsMap[spotterID].SpottingEvents++

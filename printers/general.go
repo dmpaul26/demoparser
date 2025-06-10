@@ -69,3 +69,65 @@ func PrintStats() {
 			stats.Name, stats.Kills, stats.Deaths, stats.HSPercentage, stats.RifleHSAcc, stats.TotalHSAcc, stats.TotalAcc, stats.AverageAimDist)
 	}
 }
+
+// weaponCategories defines the order and grouping for weapon types.
+var weaponCategories = [][]string{
+	// Pistols
+	{"Glock-18", "P2000", "USP-S", "P250", "Five-SeveN", "CZ75 Auto", "Tec-9", "Dual Berettas", "Desert Eagle", "R8 Revolver"},
+	// Heavy
+	{"Nova", "XM1014", "MAG-7", "Sawed-Off", "M249", "Negev"},
+	// SMG
+	{"MAC-10", "MP9", "MP7", "MP5-SD", "UMP-45", "P90", "PP-Bizon"},
+	// Rifle
+	{"FAMAS", "Galil AR", "M4A4", "M4A1-S", "M4A1", "AK-47", "AUG", "SG 553"},
+	// Sniper
+	{"SSG 08", "AWP", "G3SG1", "SCAR-20"},
+	// Utility
+	{"HE Grenade", "Flashbang", "Smoke Grenade", "Molotov", "Incendiary Grenade", "Decoy Grenade"},
+	// Knives (all types)
+	{
+		"Knife", "Bayonet", "Flip Knife", "Gut Knife", "Karambit", "M9 Bayonet", "Huntsman Knife", "Falchion Knife",
+		"Bowie Knife", "Butterfly Knife", "Shadow Daggers", "Paracord Knife", "Survival Knife", "Nomad Knife",
+		"Skeleton Knife", "Stiletto Knife", "Ursus Knife", "Talon Knife", "Classic Knife", "Canis Knife",
+		"Outdoor Knife", "Cord Knife", "Gypsy Jackknife", "Widowmaker Knife", "Kukri Knife",
+	},
+}
+
+// PrintWeaponFireCounts prints how many times each player fired each weapon, sorted by category.
+func PrintWeaponFireCounts() {
+	fmt.Println("Weapon Fire Counts Per Player (Sorted by Category):")
+	fmt.Println("------------------------------------------------------")
+	for _, stats := range models.PlayerStatsMap {
+		fmt.Printf("Player: %s\n", stats.Name)
+		if len(stats.WeaponFireCounts) == 0 {
+			fmt.Println("  No weapon fires recorded.")
+			continue
+		}
+
+		// Track which weapons have already been printed
+		printed := make(map[string]bool)
+
+		// Print by category order
+		for _, category := range weaponCategories {
+			for _, weapon := range category {
+				if count, ok := stats.WeaponFireCounts[weapon]; ok {
+					fmt.Printf("  %-20s: %d\n", weapon, count)
+					printed[weapon] = true
+				}
+			}
+		}
+
+		// Print any remaining weapons not in the categories, sorted alphabetically
+		var others []string
+		for weapon := range stats.WeaponFireCounts {
+			if !printed[weapon] {
+				others = append(others, weapon)
+			}
+		}
+		sort.Strings(others)
+		for _, weapon := range others {
+			fmt.Printf("  %-20s: %d\n", weapon, stats.WeaponFireCounts[weapon])
+		}
+		fmt.Println()
+	}
+}

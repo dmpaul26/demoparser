@@ -13,24 +13,16 @@ import (
 // HandlePlayerHurtEvent processes PlayerHurt events.
 func HandlePlayerHurtEvent(p dem.Parser, e events.PlayerHurt) {
 	if e.Attacker != nil && e.Attacker.IsConnected && e.Player != nil && e.Player.IsConnected {
+		attackerID := e.Attacker.SteamID64
+		currentTick := uint64(p.GameState().IngameTick())
+
 		if e.Attacker.Team == e.Player.Team {
 			return // Ignore team damage
 		}
 
-		attackerID := e.Attacker.SteamID64
-		currentTick := uint64(p.GameState().IngameTick())
-
-		if _, exists := models.PlayerStatsMap[attackerID]; !exists {
-			models.PlayerStatsMap[attackerID] = &models.PlayerStats{SteamID: attackerID, Name: e.Attacker.Name}
-		}
-
-		// Ignore grenades, knives, and AWP shots
+		// Ignore grenades, knives
 		if utils.IsGrenade(e.Weapon) || utils.IsKnife(e.Weapon) {
 			return
-		}
-
-		if e.Attacker.Name == "itsPhix" {
-			fmt.Printf("PlayerHurt event: Attacker %s, Victim %s, Tick %d with %s\n", e.Attacker.Name, e.Player.Name, currentTick, e.Weapon.String())
 		}
 
 		if utils.IsShotgun(e.Weapon) {

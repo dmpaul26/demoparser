@@ -25,6 +25,7 @@ func main() {
 	//eventHandlers.DebugConnections = true
 	//eventHandlers.DebugWeaponFire = true
 	//eventHandlers.WeaponFirePlayerFilter = "" // Set to "" to log all, or a name to filter
+	//models.DebugPlayerStatsInit = true // or false to disable
 
 	utils.LoadDemos(&foldersToDelete, &files)
 
@@ -36,6 +37,7 @@ func main() {
 	// *** toggle printers ***
 	// Uncomment the following lines to enable specific printers
 	printers.PrintStats()
+	//printers.PrintWeaponFireCounts()
 
 	// Clean up extracted folders
 	for _, folder := range foldersToDelete {
