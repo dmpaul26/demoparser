@@ -5,18 +5,20 @@ import (
 	"log"
 	"os"
 
-	eventHandlers "demoparser/eventHandlers"
-	utils "demoparser/utils"
+	"demoparser/eventHandlers"
+	"demoparser/printers"
+	"demoparser/utils"
 
-	dem "github.com/markus-wa/demoinfocs-golang/v4/pkg/demoinfocs"
-	events "github.com/markus-wa/demoinfocs-golang/v4/pkg/demoinfocs/events"
+	"github.com/markus-wa/demoinfocs-golang/v4/pkg/demoinfocs"
+	"github.com/markus-wa/demoinfocs-golang/v4/pkg/demoinfocs/events"
 )
 
 func main() {
 	var files []string
 	foldersToDelete := []string{}
 
-	// toggle-able debug flags
+	// *** toggle-able debug flags ***
+	// Uncomment the following lines to enable debug output for specific events
 	//eventHandlers.DebugChat = true
 	//eventHandlers.DebugRounds = true
 	//eventHandlers.DebugRoundEnds = true
@@ -29,7 +31,7 @@ func main() {
 		resetGlobals()
 	}
 
-	//printers.PrintStats()
+	printers.PrintStats()
 
 	// Clean up extracted folders
 	for _, folder := range foldersToDelete {
@@ -50,7 +52,7 @@ func parseDemo(demoPath string) {
 	}
 	defer f.Close()
 
-	p := dem.NewParser(f)
+	p := demoinfocs.NewParser(f)
 	defer p.Close()
 
 	fmt.Printf("Processing demo: %s\n", demoPath)
